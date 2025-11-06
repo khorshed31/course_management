@@ -1,0 +1,25 @@
+/* DashLite RTL minimal fixes */
+html[dir="rtl"] body { direction: rtl; text-align: right; }
+
+/* Bootstrap logical helpers */
+html[dir="rtl"] .text-start { text-align: right !important; }
+html[dir="rtl"] .text-end   { text-align: left  !important; }
+html[dir="rtl"] .ms-auto    { margin-left: 0 !important; margin-right: auto !important; }
+html[dir="rtl"] .me-auto    { margin-right: 0 !important; margin-left:  auto !important; }
+
+/* Sidebar placement & content push */
+html[dir="rtl"] .nk-sidebar { right: 0; left: auto; }
+html[dir="rtl"] .nk-wrap { margin-right: var(--nk-sidebar-width, 280px); margin-left: 0 !important; }
+
+/* Sidebar menu spacing */
+html[dir="rtl"] .nk-sidebar .nk-menu > li > a .nk-menu-icon { margin-left: .5rem; margin-right: 0; }
+html[dir="rtl"] .nk-sidebar .nk-menu > li > a .nk-menu-text { padding-right: 0; }
+
+/* Breadcrumbs / navs */
+html[dir="rtl"] .breadcrumb, html[dir="rtl"] .nk-breadcrumb { direction: rtl; }
+
+/* Forms */
+html[dir="rtl"] .form-check { padding-right: 1.5rem; padding-left: 0; }
+html[dir="rtl"] .form-check-input { float: right; margin-right: 0; margin-left: .5rem; }
+html[dir="rtl"] .input-group > .form-control,
+html[dir="rtl"] .input-group > .form-select { text-align: right; }
