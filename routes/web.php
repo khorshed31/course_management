@@ -29,6 +29,7 @@ use App\Http\Controllers\Student\ProfileController as StudentProfileController;
 use App\Http\Controllers\ContactMessageController as AdminContact;
 use App\Http\Controllers\PromotionController;
 use Illuminate\Support\Facades\Artisan;
+use App\Services\SessionCart;
 
 Route::get('/clear-cache', function () {
     Artisan::call('optimize:clear');
@@ -46,16 +47,54 @@ Route::get('/courses', [FrontendController::class, 'courses'])->name('courses.li
 Route::get('/courses/{course:slug}', [FrontendController::class, 'show'])->name('courses.show');
 Route::post('/contact/send', [ContactController::class, 'send'])->name('contact.send');
 
-Route::get('/checkout/{type}/{slug}', [CheckoutController::class, 'page'])
-    ->where('type', 'course|book')
-    ->name('checkout.page');
+/*
+|--------------------------------------------------------------------------
+| 🛒 Cart Routes (Session Based)
+|--------------------------------------------------------------------------
+*/
 
-Route::get('/checkout/{slug}', function (string $slug) {
-    return redirect()->route('checkout.page', ['type' => 'course', 'slug' => $slug]);
-})->name('checkout.page.legacy');
+// Add item to cart (via form POST)
+Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
 
-// Submit/charge route (POST)
+// Update quantity
+Route::post('/cart/update-qty', [CartController::class, 'updateQty'])->name('cart.updateQty');
+
+// Remove a single item
+Route::post('/cart/remove', [CartController::class, 'remove'])->name('cart.remove');
+
+// Clear all cart items
+Route::post('/cart/clear', [CartController::class, 'clear'])->name('cart.clear');
+
+
+/*
+|--------------------------------------------------------------------------
+| 💳 Checkout Routes (Cart-based)
+|--------------------------------------------------------------------------
+*/
+
+// Show checkout page (shows all session cart items)
+Route::get('/checkout', [CheckoutController::class, 'page'])->name('checkout.page');
+
+// Submit checkout form (proceed to payment or success)
 Route::post('/checkout', [CheckoutController::class, 'submit'])->name('checkout.submit');
+
+
+/*
+|--------------------------------------------------------------------------
+| 🔁 Legacy Compatibility (optional)
+|--------------------------------------------------------------------------
+*/
+Route::get('/checkout/{type}/{slug}', function (string $type, string $slug, SessionCart $cart) {
+    abort_unless(in_array($type, ['course', 'book'], true), 404);
+    $cart->add($type, $slug, 1);
+    return redirect()->route('checkout.page')->with('success', 'Item added to cart.');
+})->where('type', 'course|book')->name('checkout.add.direct');
+
+// Optional: allow /checkout/{slug} (defaults to course)
+Route::get('/checkout/{slug}', function (string $slug, SessionCart $cart) {
+    $cart->add('course', $slug, 1);
+    return redirect()->route('checkout.page')->with('success', 'Course added to cart.');
+})->name('checkout.add.course');
 
 Route::post('books/{book:slug}/buy', [BookPublicController::class, 'buy'])->name('books.buy');
 

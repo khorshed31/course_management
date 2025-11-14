@@ -203,9 +203,13 @@
                             <a href="{{ route('learn.course', $course->id) }}"><i class="fa fa-play-circle"></i> Continue</a>
                         </div>
                     @else
-                    <form method="GET" action="{{ route('checkout.page', ['type' => 'course', 'slug' => $course->slug]) }}">
+                    <form method="POST" action="{{ route('cart.add') }}">
                       @csrf
-                      <button class="btn btn-primary" type="submit"><i class="fa fa-credit-card"></i> Buy Now</button>
+                      <input type="hidden" name="type" value="course">
+                      <input type="hidden" name="slug" value="{{ $course->slug }}">
+                      <button class="btn btn-primary" type="submit">
+                        <i class="fa fa-shopping-cart"></i> Add to Cart
+                      </button>
                     </form>
                     @endif
                 </div>

@@ -179,9 +179,12 @@
         <div class="col-lg-6">
           <h3 class="fw-bold mb-3">الجدول الأول <span class="accent">– Standard</span></h3>
           <h5 class="text-muted mb-4">جدول ممتاز نشتغل فيه على عضلتين باليوم...</h5>
-          <form method="GET" action="{{ route('checkout.page', ['type' => 'course', 'slug' => $firstCourse->slug]) }}">
+          <form method="POST" action="{{ route('cart.add') }}">
+            @csrf
+            <input type="hidden" name="type" value="course">
+            <input type="hidden" name="slug" value="{{ $firstCourse->slug }}">
             <button class="btn btn-outline-primary rounded-pill px-4" type="submit">
-              <i class="fa fa-credit-card"></i> اشتري الآن
+              <i class="fa fa-shopping-cart"></i> اشتري الآن
             </button>
           </form>
         </div>
@@ -205,9 +208,12 @@
         <div class="col-lg-6">
           <h3 class="fw-bold mb-3">الجدول الثاني <span class="accent">– Push Pull Legs</span></h3>
           <h5 class="text-muted mb-4">نرفع فيه مستوى الجهد...</h5>
-          <form method="GET" action="{{ route('checkout.page', ['type' => 'course', 'slug' => $secondCourse->slug]) }}">
+          <form method="POST" action="{{ route('cart.add') }}">
+            @csrf
+            <input type="hidden" name="type" value="course">
+            <input type="hidden" name="slug" value="{{ $secondCourse->slug }}">
             <button class="btn btn-outline-primary rounded-pill px-4" type="submit">
-              <i class="fa fa-credit-card"></i> اشتري الآن
+              <i class="fa fa-shopping-cart"></i> اشتري الآن
             </button>
           </form>
         </div>
@@ -231,9 +237,12 @@
         <div class="col-lg-6">
           <h3 class="fw-bold mb-3">الجدول الثالث <span class="accent">– 3shwe Style</span></h3>
           <h5 class="text-muted mb-4">أقوى جدول...</h5>
-          <form method="GET" action="{{ route('checkout.page', ['type' => 'course', 'slug' => $thirdCourse->slug]) }}">
+          <form method="POST" action="{{ route('cart.add') }}">
+            @csrf
+            <input type="hidden" name="type" value="course">
+            <input type="hidden" name="slug" value="{{ $thirdCourse->slug }}">
             <button class="btn btn-outline-primary rounded-pill px-4" type="submit">
-              <i class="fa fa-credit-card"></i> اشتري الآن
+              <i class="fa fa-shopping-cart"></i> اشتري الآن
             </button>
           </form>
         </div>
@@ -277,9 +286,12 @@
               $has = $featuredBook->purchases()->where('user_id', auth()->id())->where('status','paid')->exists();
             @endphp
             @unless ($has)
-              <form method="GET" action="{{ route('checkout.page', ['type'=>'book','slug'=>$featuredBook->slug]) }}" class="d-inline">
+              <form method="POST" action="{{ route('cart.add') }}" class="d-inline">
+                @csrf
+                <input type="hidden" name="type" value="book">
+                <input type="hidden" name="slug" value="{{ $featuredBook->slug }}">
                 <button class="btn btn-outline-primary rounded-pill px-4" type="submit">
-                  <i class="fa fa-credit-card"></i>  اشتري الآن
+                  <i class="fa fa-shopping-cart"></i>  اشتري الآن
                 </button>
               </form>
             @endunless

@@ -105,7 +105,7 @@
   $finalPrice = ($promo && $rawPrice > 0) ? $service->applyDiscount($rawPrice, $promo) : $rawPrice;
   $endsAt = $promo ? $service->endsAt($promo) : null;         // Carbon|null
   $currency = 'د.ك'; // adjust if needed
-  $isInCart = auth()->check() && auth()->user()->carts()->where('course_id', $course->id)->exists();
+  $isInCart = false; // session-cart version doesn't use DB carts; keep false or wire your own check
 @endphp
 
 <section id="course-show" class="section py-4 mt-under-sticky">
@@ -128,15 +128,6 @@
           loading="eager"
         >
       </div>
-
-      {{-- Status badge (optional) --}}
-      {{-- <div class="hero-badges">
-        @if(($course->status ?? 1))
-          <span class="badge-live">Active</span>
-        @else
-          <span class="badge-inactive">Inactive</span>
-        @endif
-      </div> --}}
 
       {{-- PRICE TAG (shows discount if promo found) --}}
       <div class="price-tag {{ $rawPrice > 0 ? '' : 'price-free' }}">
@@ -200,10 +191,12 @@
             @if($enrolled)
               <a href="{{ route('learn.course', $course->id) }}"><i class="fa fa-play-circle"></i> Continue Learning</a>
             @else
-              <form method="GET" action="{{ route('checkout.page', ['type' => 'course', 'slug' => $course->slug]) }}">
-                  @csrf
-                  <button class="btn btn-primary" type="submit"><i class="fa fa-credit-card"></i> Buy Now</button>
-                </form>
+              <form method="POST" action="{{ route('cart.add') }}">
+                @csrf
+                <input type="hidden" name="type" value="course">
+                <input type="hidden" name="slug" value="{{ $course->slug }}">
+                <button class="btn btn-primary" type="submit"><i class="fa fa-credit-card"></i> Buy Now</button>
+              </form>
             @endif
         </div>
 
@@ -253,13 +246,15 @@
 
             <div class="mt-3 main-button">
               @if($enrolled)
-              <a href="{{ route('learn.course', $course->id) }}"><i class="fa fa-play-circle"></i> Continue Learning</a>
-            @else
-              <form method="GET" action="{{ route('checkout.page', ['type' => 'course', 'slug' => $course->slug]) }}">
+                <a href="{{ route('learn.course', $course->id) }}"><i class="fa fa-play-circle"></i> Continue Learning</a>
+              @else
+                <form method="POST" action="{{ route('cart.add') }}">
                   @csrf
+                  <input type="hidden" name="type" value="course">
+                  <input type="hidden" name="slug" value="{{ $course->slug }}">
                   <button class="btn btn-primary" type="submit"><i class="fa fa-credit-card"></i> Buy Now</button>
                 </form>
-            @endif
+              @endif
             </div>
           </div>
         </div>
@@ -337,13 +332,15 @@
             </span>
           </div>
           @if($enrolled)
-              <a href="{{ route('learn.course', $course->id) }}"><i class="fa fa-play-circle"></i> Continue Learning</a>
-            @else
-              <form method="GET" action="{{ route('checkout.page', ['type' => 'course', 'slug' => $course->slug]) }}">
-                  @csrf
-                  <button class="btn btn-primary" type="submit"><i class="fa fa-credit-card"></i> Buy Now</button>
-                </form>
-            @endif
+            <a href="{{ route('learn.course', $course->id) }}"><i class="fa fa-play-circle"></i> Continue Learning</a>
+          @else
+            <form method="POST" action="{{ route('cart.add') }}">
+              @csrf
+              <input type="hidden" name="type" value="course">
+              <input type="hidden" name="slug" value="{{ $course->slug }}">
+              <button class="btn btn-primary" type="submit"><i class="fa fa-credit-card"></i> Buy Now</button>
+            </form>
+          @endif
         </div>
       </div>
     @endif
@@ -365,13 +362,15 @@
           </span>
         </div>
         @if($enrolled)
-              <a href="{{ route('learn.course', $course->id) }}"><i class="fa fa-play-circle"></i> Continue Learning</a>
-            @else
-              <form method="GET" action="{{ route('checkout.page', ['type' => 'course', 'slug' => $course->slug]) }}">
-                  @csrf
-                  <button class="btn btn-primary" type="submit"><i class="fa fa-credit-card"></i> Buy Now</button>
-                </form>
-            @endif
+          <a href="{{ route('learn.course', $course->id) }}"><i class="fa fa-play-circle"></i> Continue Learning</a>
+        @else
+          <form method="POST" action="{{ route('cart.add') }}">
+            @csrf
+            <input type="hidden" name="type" value="course">
+            <input type="hidden" name="slug" value="{{ $course->slug }}">
+            <button class="btn btn-primary" type="submit"><i class="fa fa-credit-card"></i> Buy Now</button>
+          </form>
+        @endif
       </div>
     </div>
   @endauth
@@ -406,7 +405,6 @@
     node.querySelector('.cd-s').textContent = pad(s);
 
     if (diff === 0) {
-      // Hide the ribbon when expired (optional)
       var ribbon = node.closest('.promo-ribbon');
       if (ribbon) ribbon.remove();
       clearInterval(timer);
