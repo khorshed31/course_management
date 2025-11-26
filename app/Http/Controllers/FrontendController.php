@@ -7,21 +7,16 @@ use Illuminate\Http\Request;
 use App\Models\Course;
 use App\Models\CourseEnrollment;
 use Illuminate\Support\Facades\DB;
+use App\Services\SessionCart;
 
 class FrontendController extends Controller
 {
-    public function index()
+    public function index(SessionCart $cart)
     {
-        // Get the 3 specific courses by slug or any other criteria
-        $firstCourse = Course::where('program', '1')->first();
+        // Get the 3 specific courses by program
+        $firstCourse  = Course::where('program', '1')->first();
         $secondCourse = Course::where('program', '2')->first();
-        $thirdCourse = Course::where('program', '3')->first();
-        // $books = Book::query()
-        //     ->where('status', 'published')
-        //     ->whereNotNull('published_at')
-        //     ->where('published_at', '<=', now())
-        //     ->latest('published_at')
-        //     ->paginate(12); // first page
+        $thirdCourse  = Course::where('program', '3')->first();
 
         $featuredBook = Book::query()
             ->where('status', 'published')
@@ -30,28 +25,43 @@ class FrontendController extends Controller
             ->latest('published_at')
             ->first();
 
-        // $booksApiUrl = route('books.paginate');
+        // Cart data
+        $cartData   = $cart->get();
+        $cartItems  = $cartData['items'] ?? [];
+        $cartCount  = count($cartItems);
+        $cartTotal  = $cart->totalPrice();          // uses your existing method
+        $currency   = $cartData['currency'] ?? 'د.ك';
 
-        return view('frontend.pages.index', compact('firstCourse', 'secondCourse', 'thirdCourse', 'featuredBook'));
+        return view('frontend.pages.index', compact(
+            'firstCourse',
+            'secondCourse',
+            'thirdCourse',
+            'featuredBook',
+            'cartItems',
+            'cartCount',
+            'cartTotal',
+            'currency'
+        ));
     }
 
 
-    public function courses(Request $request)
+
+    public function courses(Request $request, SessionCart $cart)
     {
         $q     = trim((string) $request->input('q'));
         $sort  = $request->input('sort', 'latest'); // latest|popular|price_asc|price_desc
         $per   = (int) ($request->input('per_page') ?? 12);
         $per   = $per > 0 && $per <= 48 ? $per : 12;
 
+        // Get courses based on search and sort options
         $courses = Course::query()
             ->when($q, fn($qry) =>
                 $qry->where(fn($x) =>
                     $x->where('title', 'like', "%{$q}%")
-                      ->orWhere('description', 'like', "%{$q}%")
+                    ->orWhere('description', 'like', "%{$q}%")
                 )
             )
-            // add simple “popularity” example (enrollments_count)
-            ->withCount('enrollments')
+            ->withCount('enrollments') // Count enrollments for popularity sorting
             ->when($sort === 'latest', fn($qry) => $qry->orderByDesc('created_at'))
             ->when($sort === 'popular', fn($qry) => $qry->orderByDesc('enrollments_count'))
             ->when($sort === 'price_asc', fn($qry) => $qry->orderBy('price'))
@@ -59,22 +69,42 @@ class FrontendController extends Controller
             ->paginate($per)
             ->withQueryString();
 
+        // Enrolled map
         $enrolledMap = [];
         if (auth()->check()) {
             $userId = auth()->id();
-            // get enrollments for current page only (fast)
             $ids = $courses->getCollection()->pluck('id')->all();
+
             $enrolled = CourseEnrollment::whereIn('course_id', $ids)
                 ->where('user_id', $userId)
                 ->get(['course_id', 'progress_percent'])
                 ->keyBy('course_id');
+
             $enrolledMap = $enrolled->toArray();
         }
 
-        return view('frontend.pages.courses', compact('courses', 'q', 'sort', 'per', 'enrolledMap'));
+        // Cart data (for cards + sticky bar)
+        $cartData  = $cart->get();
+        $cartItems = $cartData['items'] ?? [];
+        $cartCount = count($cartItems);
+        $cartTotal = $cart->totalPrice();               // uses your SessionCart::totalPrice()
+        $currency  = $cartData['currency'] ?? 'د.ك';
+
+        // View
+        return view('frontend.pages.courses', compact(
+            'courses',
+            'q',
+            'sort',
+            'per',
+            'enrolledMap',
+            'cartItems',
+            'cartCount',
+            'cartTotal',
+            'currency'
+        ));
     }
 
-    public function show(Course $course, Request $request)
+    public function show(Course $course, Request $request, SessionCart $cart)
     {
         // Ensure course is found by slug
         $course = Course::where('slug', $course->slug)->firstOrFail();
@@ -97,8 +127,9 @@ class FrontendController extends Controller
             ->take(6)
             ->get();
 
+        $cartItems = $cart->get()['items'] ?? [];
         // Return the view with course details and related courses
-        return view('frontend.pages.course_details', compact('course', 'enrolled', 'progress', 'relatedCourses'));
+        return view('frontend.pages.course_details', compact('course', 'enrolled', 'progress', 'relatedCourses', 'cartItems'));
     }
 
 

@@ -275,25 +275,83 @@
             $toils  = $lesson->toils ?? null;        // integer (optional)
             $rounds = trim($lesson->rounds ?? '');   // plain string e.g. "10, 12, 14, 16"
           @endphp
+<table class="custom-table">
+  <thead>
+    <tr>
+      <th>Title</th>
+      <th>Order</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><b>{{ $lesson->title }}</b></td>
+      <td>{{ $order ?: '-' }}</td>
+    </tr>
+    <tr>
+      <td colspan="2"><strong>Notes:</strong></td>
+    </tr>
+    <tr>
+      <td colspan="2">{{ $lesson->notes ?: 'No notes available.' }}</td>
+    </tr>
+    <tr>
+      <td class="muted"><strong>Tours:</strong></td>
+      <td>{{ $lesson->others ?: 'None' }}</td>
+    </tr>
+  </tbody>
+</table>
 
-          <div class="lesson-mini">
-            {{-- Row 1: Title | Order --}}
-            <div class="text-truncate" title="{{ $lesson->title }}"><b>{{ $lesson->title }}</b></div>
-            <div>{{ $order ?: '-' }}</div>
+<style>
+  /* Styling for the table */
+.custom-table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background-color: #fff;
+  margin: 20px 0;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
 
-            {{-- Row 2: Toils | Rounds --}}
-            <div class="muted">{{ $labelToils }} {{ $toils !== null ? $toils : '-' }}</div>
-            <div>{{ $rounds !== '' ? $rounds : '-' }}</div>
+.custom-table th, .custom-table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+}
 
-            {{-- Row 3: Notes  --}}
-            <div class="muted"><strong>{{ app()->getLocale()==='ar' ? 'ملاحظات' : 'Notes' }}:</strong></div>
-            <div>{{ $lesson->notes }}</div>
+.custom-table th {
+  background-color: #f4f7fa;
+  color: #334155;
+  font-weight: bold;
+}
 
-            {{-- Row 4: Tours  --}}
-            <div class="muted"><strong>{{ app()->getLocale()==='ar' ? 'الجولات' : 'Tours' }}:</strong></div>
-            <div>{{ $lesson->others }}</div>
+.custom-table tr:hover {
+  background-color: #f9f9f9;
+}
 
-          </div>
+.custom-table .muted {
+  color: #6c757d;
+  font-weight: normal;
+}
+
+.custom-table td[colspan="2"] {
+  background-color: #f8fafc;
+  padding-left: 20px;
+}
+
+.custom-table td[colspan="2"]:first-child {
+  font-weight: bold;
+  color: #334155;
+}
+
+/* Responsive styling */
+@media (max-width: 600px) {
+  .custom-table th, .custom-table td {
+    padding: 8px;
+    font-size: 14px;
+  }
+}
+
+</style>
 
           {{-- @if(!empty($lesson->notes) || !empty($lesson->others))
             <div class="mt-2" style="border:1px solid #e5e7eb;border-radius:10px;padding:.75rem;background:#fff">

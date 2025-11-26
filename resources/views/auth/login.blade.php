@@ -123,6 +123,14 @@
                   </div>
                   @error('password') <span class="invalid-feedback d-block" role="alert">{{ $message }}</span> @enderror
                 </div>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                  <div></div>
+                  @if (Route::has('password.request'))
+                      <a class="small text-decoration-underline" href="{{ route('password.request') }}">
+                          Forgot your password?
+                      </a>
+                  @endif
+                </div>
                 <div class="d-grid mb-2">
                   <button class="btn btn-lg auth-btn-primary" type="submit">Sign in</button>
                 </div>

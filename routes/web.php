@@ -62,6 +62,9 @@ Route::post('/cart/update-qty', [CartController::class, 'updateQty'])->name('car
 // Remove a single item
 Route::post('/cart/remove', [CartController::class, 'remove'])->name('cart.remove');
 
+Route::post('/cart/remove/ajax', [CartController::class, 'removeFromCart'])->name('cart.remove.ajax');
+
+
 // Clear all cart items
 Route::post('/cart/clear', [CartController::class, 'clear'])->name('cart.clear');
 

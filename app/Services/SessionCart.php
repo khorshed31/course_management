@@ -41,6 +41,15 @@ class SessionCart
         return count($cart['items']); // Only count unique items
     }
 
+    public function totalPrice(): float
+    {
+        $cart = $this->get();
+        // Sum the 'final_price' for each item in the cart
+        return (float) array_sum(array_map(function ($item) {
+            return (float) $item['final_price'];
+        }, $cart['items']));
+    }
+
     /**
      * Add a course or book to the cart.
      * No duplicates, only one of each course.

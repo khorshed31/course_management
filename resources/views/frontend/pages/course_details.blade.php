@@ -105,7 +105,7 @@
   $finalPrice = ($promo && $rawPrice > 0) ? $service->applyDiscount($rawPrice, $promo) : $rawPrice;
   $endsAt = $promo ? $service->endsAt($promo) : null;         // Carbon|null
   $currency = 'د.ك'; // adjust if needed
-  $isInCart = false; // session-cart version doesn't use DB carts; keep false or wire your own check
+  $isInCart = in_array($course->slug, array_column($cartItems, 'slug'));
 @endphp
 
 <section id="course-show" class="section py-4 mt-under-sticky">
@@ -191,12 +191,21 @@
             @if($enrolled)
               <a href="{{ route('learn.course', $course->id) }}"><i class="fa fa-play-circle"></i> Continue Learning</a>
             @else
-              <form method="POST" action="{{ route('cart.add') }}">
+              <form method="POST" action="{{ route('cart.add') }}" class="ajax-add-to-cart" data-course-slug="{{ $course->slug }}">
                 @csrf
                 <input type="hidden" name="type" value="course">
                 <input type="hidden" name="slug" value="{{ $course->slug }}">
-                <button class="btn btn-primary" type="submit"><i class="fa fa-credit-card"></i> Buy Now</button>
-              </form>
+
+                @if($isInCart)
+                    <a href="{{ route('checkout.page') }}" class="btn btn-primary rounded-pill px-4">
+                        <i class="fa fa-shopping-cart"></i> View Cart
+                    </a>
+                @else
+                    <button class="btn btn-outline-primary rounded-pill px-4" type="submit">
+                        <i class="fa fa-shopping-cart"></i> Add to Cart
+                    </button>
+                @endif
+            </form>
             @endif
         </div>
 
@@ -248,12 +257,21 @@
               @if($enrolled)
                 <a href="{{ route('learn.course', $course->id) }}"><i class="fa fa-play-circle"></i> Continue Learning</a>
               @else
-                <form method="POST" action="{{ route('cart.add') }}">
+                <form method="POST" action="{{ route('cart.add') }}" class="ajax-add-to-cart" data-course-slug="{{ $course->slug }}">
                   @csrf
                   <input type="hidden" name="type" value="course">
                   <input type="hidden" name="slug" value="{{ $course->slug }}">
-                  <button class="btn btn-primary" type="submit"><i class="fa fa-credit-card"></i> Buy Now</button>
-                </form>
+
+                  @if($isInCart)
+                      <a href="{{ route('checkout.page') }}" class="btn btn-primary rounded-pill px-4">
+                          <i class="fa fa-shopping-cart"></i> View Cart
+                      </a>
+                  @else
+                      <button class="btn btn-outline-primary rounded-pill px-4" type="submit">
+                          <i class="fa fa-shopping-cart"></i> Add to Cart
+                      </button>
+                  @endif
+              </form>
               @endif
             </div>
           </div>
@@ -334,12 +352,21 @@
           @if($enrolled)
             <a href="{{ route('learn.course', $course->id) }}"><i class="fa fa-play-circle"></i> Continue Learning</a>
           @else
-            <form method="POST" action="{{ route('cart.add') }}">
+            <form method="POST" action="{{ route('cart.add') }}" class="ajax-add-to-cart" data-course-slug="{{ $course->slug }}">
               @csrf
               <input type="hidden" name="type" value="course">
               <input type="hidden" name="slug" value="{{ $course->slug }}">
-              <button class="btn btn-primary" type="submit"><i class="fa fa-credit-card"></i> Buy Now</button>
-            </form>
+
+              @if($isInCart)
+                  <a href="{{ route('checkout.page') }}" class="btn btn-primary rounded-pill px-4">
+                      <i class="fa fa-shopping-cart"></i> View Cart
+                  </a>
+              @else
+                  <button class="btn btn-outline-primary rounded-pill px-4" type="submit">
+                      <i class="fa fa-shopping-cart"></i> Add to Cart
+                  </button>
+              @endif
+          </form>
           @endif
         </div>
       </div>
@@ -364,20 +391,114 @@
         @if($enrolled)
           <a href="{{ route('learn.course', $course->id) }}"><i class="fa fa-play-circle"></i> Continue Learning</a>
         @else
-          <form method="POST" action="{{ route('cart.add') }}">
+          <form method="POST" action="{{ route('cart.add') }}" class="ajax-add-to-cart" data-course-slug="{{ $course->slug }}">
             @csrf
             <input type="hidden" name="type" value="course">
             <input type="hidden" name="slug" value="{{ $course->slug }}">
-            <button class="btn btn-primary" type="submit"><i class="fa fa-credit-card"></i> Buy Now</button>
-          </form>
+
+            @if($isInCart)
+                <a href="{{ route('checkout.page') }}" class="btn btn-primary rounded-pill px-4">
+                    <i class="fa fa-shopping-cart"></i> View Cart
+                </a>
+            @else
+                <button class="btn btn-outline-primary rounded-pill px-4" type="submit">
+                    <i class="fa fa-shopping-cart"></i> Add to Cart
+                </button>
+            @endif
+        </form>
         @endif
       </div>
     </div>
   @endauth
+    <div class="toast-stack" id="toastStack" aria-live="polite" aria-atomic="true"></div>
 </section>
 @endsection
 
 @push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    const toastStack = document.getElementById('toastStack'); // Toast container for notifications
+
+    // Function to show toast notification
+    function showToast(message, type = 'success') {
+        if (!toastStack) return;
+        const node = document.createElement('div');
+        node.className = `toast-item ${type}`;
+        node.innerHTML = `<i class="fa ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i><span>${message}</span>`;
+        toastStack.appendChild(node);
+        setTimeout(() => { node.remove(); }, 2800);
+    }
+
+    // Function to swap button to "View Cart" after adding item
+    function swapToViewCart(form) {
+        const viewUrl = form.getAttribute('data-view-cart');
+        const successText = form.getAttribute('data-success-text') || 'تمت الإضافة ✓';
+        const btn = form.querySelector('button[type="submit"]');
+
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa fa-check"></i> ${successText}`;
+            btn.classList.remove('btn-outline-primary');
+            btn.classList.add('btn-primary');
+        }
+
+        // Replace form with a link button (to maintain layout)
+        const link = document.createElement('a');
+        link.href = viewUrl || '{{ route('checkout.page') }}';
+        link.className = btn?.className || 'btn btn-primary rounded-pill px-4';
+        link.innerHTML = `<i class="fa fa-shopping-cart"></i> عرض السلة`;
+
+        // Small delay for user feedback before swapping
+        setTimeout(() => {
+            form.replaceWith(link);
+        }, 400);
+    }
+
+    // Handle Ajax Add to Cart form submission
+    document.querySelectorAll('form.ajax-add-to-cart').forEach(form => {
+        form.addEventListener('submit', function (e) {
+            e.preventDefault(); // Prevent default form submission
+
+            const formData = new FormData(form);
+            const btn = form.querySelector('button[type="submit"]');
+            const oldBtnText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa fa-spinner fa-spin"></i> ...`;
+
+            fetch(form.action, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken,
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(json => {
+                if (json.ok) {
+                    showToast(json.message || 'تمت إضافة المنتج إلى السلة', 'success');
+                    swapToViewCart(form); // Update the button
+
+                    // Optional: update navbar cart counter
+                    const counter = document.querySelector('.cart-count');
+                    if (counter && json.cart_count !== undefined) {
+                        counter.textContent = json.cart_count; // Update cart count
+                    }
+                } else {
+                    showToast(json.message || 'لم يتم إضافة المنتج', 'error');
+                    btn.disabled = false;
+                    btn.innerHTML = oldBtnText;
+                }
+            })
+            .catch(() => {
+                showToast('حصل خطأ غير متوقع', 'error');
+                btn.disabled = false;
+                btn.innerHTML = oldBtnText;
+            });
+        });
+    });
+});
+</script>
 <script>
 /* One countdown for course page (title ribbon). Works for timer/special_day. */
 (function(){
